@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizing Mechanisms of Neuronal Activity Manipulation</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Clean light mode base styles */
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .editable-active [contenteditable="true"] {
+      outline: 2px dashed #0284c7;
+      background-color: #f0f9ff;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+  <div class="max-w-4xl mx-auto w-full">
+    
+    <!-- Top Bar: Title & Edit Mode Toggle -->
+    <header class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-200 mb-6">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight" contenteditable="false" data-key="main-title">
+          🧠 Brain Manipulation Lab: 6 Techniques
+        </h1>
+        <p class="text-sm sm:text-base text-slate-600 mt-1" contenteditable="false" data-key="main-subtitle">
+          Test which technique fits each research scenario and observe what happens in real time.
+        </p>
+      </div>
+
+      <!-- Instructor Edit Mode Button -->
+      <div class="flex items-center gap-2">
+        <button id="toggleEditBtn" onclick="toggleEditMode()" class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition">
+          <i data-lucide="edit-3" class="w-4 h-4 text-sky-600"></i>
+          <span id="editTextLabel">✏️ Enable Live Text Editing</span>
+        </button>
+        <button id="resetEditsBtn" onclick="resetCustomText()" class="hidden px-2 py-1.5 text-xs text-rose-600 hover:text-rose-700 font-medium underline">
+          Reset Text
+        </button>
+      </div>
+    </header>
+
+    <!-- Scenario Progress Tabs -->
+    <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+      <div id="tab-1" class="border-2 border-sky-500 bg-sky-50 text-sky-900 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-xs sm:text-sm shadow-sm transition">
+        <span>1. Worm Movement</span>
+      </div>
+      <div id="tab-2" class="border-2 border-slate-200 bg-white text-slate-400 p-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm transition">
+        <span>2. Human Curiosity</span>
+      </div>
+      <div id="tab-3" class="border-2 border-slate-200 bg-white text-slate-400 p-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm transition">
+        <span>3. Quick 250ms Silencing</span>
+      </div>
+    </div>
+
+    <!-- Scenario Goal Box -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 mb-6 shadow-sm">
+      <div class="flex items-center justify-between mb-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-100 text-sky-800" id="scenarioBadge">
+          Current Goal
+        </span>
+        <div id="scenarioProgress" class="text-xs font-bold text-slate-600">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <p id="scenarioPrompt" class="text-base sm:text-lg text-slate-800 font-medium leading-relaxed" contenteditable="false" data-key="scenario-prompt">
+        <!-- Populated by JS -->
+      </p>
+    </div>
+
+    <!-- Visual Canvas Display -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm mb-6">
+      <div class="relative w-full h-64 sm:h-72 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+        <canvas id="simCanvas" width="800" height="300" class="w-full h-full block"></canvas>
+        <div id="canvasOverlay" class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm border border-slate-700 text-sky-300 text-xs sm:text-sm font-mono px-3 py-1.5 rounded-lg">
+          State: Ready. Choose a technique below.
+        </div>
+      </div>
+    </div>
+
+    <!-- The 6 Universal Technique Buttons -->
+    <div class="mb-6">
+      <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Choose a technique to test:</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        
+        <button onclick="handleSelection('physical')" class="tech-btn bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3.5 text-left transition shadow-sm group">
+          <div class="text-base font-bold text-slate-800 group-hover:text-sky-600 flex items-center gap-2">
+            <span>🔪</span> Physical
+          </div>
+          <div class="text-xs text-slate-500 mt-1" contenteditable="false" data-key="sub-physical">Cutting tissue with a scalpel</div>
+        </button>
+
+        <button onclick="handleSelection('electrical')" class="tech-btn bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3.5 text-left transition shadow-sm group">
+          <div class="text-base font-bold text-slate-800 group-hover:text-sky-600 flex items-center gap-2">
+            <span>⚡</span> Electrical / TMS
+          </div>
+          <div class="text-xs text-slate-500 mt-1" contenteditable="false" data-key="sub-electrical">Electrodes or magnetic coils</div>
+        </button>
+
+        <button onclick="handleSelection('pharmacological')" class="tech-btn bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3.5 text-left transition shadow-sm group">
+          <div class="text-base font-bold text-slate-800 group-hover:text-sky-600 flex items-center gap-2">
+            <span>💊</span> Pharmacological
+          </div>
+          <div class="text-xs text-slate-500 mt-1" contenteditable="false" data-key="sub-pharma">Injecting drugs or chemicals</div>
+        </button>
+
+        <button onclick="handleSelection('genetic')" class="tech-btn bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3.5 text-left transition shadow-sm group">
+          <div class="text-base font-bold text-slate-800 group-hover:text-sky-600 flex items-center gap-2">
+            <span>🧬</span> Genetic
+          </div>
+          <div class="text-xs text-slate-500 mt-1" contenteditable="false" data-key="sub-genetic">Permanently removing genes/cells</div>
+        </button>
+
+        <button onclick="handleSelection('chemogenetic')" class="tech-btn bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3.5 text-left transition shadow-sm group">
+          <div class="text-base font-bold text-slate-800 group-hover:text-sky-600 flex items-center gap-2">
+            <span>🧪</span> Chemogenetic
+          </div>
+          <div class="text-xs text-slate-500 mt-1" contenteditable="false" data-key="sub-chemo">Designer receptors + special pill</div>
+        </button>
+
+        <button onclick="handleSelection('optogenetic')" class="tech-btn bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3.5 text-left transition shadow-sm group">
+          <div class="text-base font-bold text-slate-800 group-hover:text-sky-600 flex items-center gap-2">
+            <span>💡</span> Optogenetic
+          </div>
+          <div class="text-xs text-slate-500 mt-1" contenteditable="false" data-key="sub-opto">Light-sensitive proteins + light pulses</div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Diagnostic Feedback Container -->
+    <div id="feedbackBox" class="hidden rounded-2xl p-6 mb-6 shadow-sm border transition">
+      
+      <div class="flex items-start gap-4">
+        <div id="feedbackIcon" class="text-2xl mt-0.5"></div>
+        <div class="flex-1">
+          <h3 id="feedbackTitle" class="text-lg font-bold mb-1"></h3>
+          <p id="feedbackDesc" class="text-sm leading-relaxed mb-4 text-slate-700"></p>
+
+          <!-- Sub-control panel for Scenario 1 (Excite vs Inhibit toggles) -->
+          <div id="subActionPanel" class="hidden bg-white/70 border border-slate-200 rounded-xl p-3 mb-4">
+            <span class="text-xs font-bold text-slate-700 block mb-2">Test both directions on the dopamine cells:</span>
+            <div class="flex gap-2">
+              <button id="btnExcite" onclick="runSubMode('excite')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+                ⚡ Increase Activity (Excite)
+              </button>
+              <button id="btnInhibit" onclick="runSubMode('inhibit')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition">
+                🛑 Decrease Activity (Inhibit)
+              </button>
+            </div>
+            <div id="subModeDetails" class="text-xs text-slate-600 mt-2 italic"></div>
+          </div>
+
+          <!-- Scenario 2: Written Response Box for Control Group -->
+          <div id="s2ControlPanel" class="hidden bg-white border border-slate-200 rounded-xl p-4 mb-4">
+            <label class="block text-xs font-bold text-slate-800 mb-1">
+              📝 Required Step: Propose a Control Group for this TMS Experiment
+            </label>
+            <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+              TMS produces a loud "clicking" sound and vibrates the scalp. How will you prove that changes in curiosity are actually caused by brain stimulation rather than just the sound, vibration, or placebo effect?
+            </p>
+            <textarea id="controlInput" rows="3" class="w-full text-xs p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 mb-2" placeholder="Describe your control group here (e.g., how will you deliver a sham condition?)..."></textarea>
+            
+            <div class="flex items-center justify-between">
+              <button onclick="toggleControlGuide()" class="text-xs text-sky-600 hover:text-sky-700 font-semibold underline">
+                💡 Need ideas? Click to see standard control options & why they work
+              </button>
+              <button onclick="submitControlProposal()" class="px-3 py-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-lg shadow-sm transition">
+                Save & Unlock Next Scenario ➜
+              </button>
+            </div>
+
+            <!-- Expandable guide explaining control groups -->
+            <div id="controlGuide" class="hidden mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 space-y-2">
+              <p><strong>1. Sham TMS (The Gold Standard):</strong> Turn the magnetic coil 90 degrees away from the head or use an inactive sham coil. It makes the exact same loud clicking noise and feels like tapping on the scalp, but no magnetic field enters the brain. If curiosity changes during real TMS but not sham TMS, the brain manipulation caused it!</p>
+              <p><strong>2. Control Brain Region (The Vertex):</strong> Apply active TMS to a completely unrelated control area at the top of the skull (the vertex). Both groups receive real stimulation, but only stimulation to the curiosity region (IFG) should alter curiosity.</p>
+            </div>
+          </div>
+
+          <!-- Action & Next Buttons -->
+          <div class="flex items-center gap-3">
+            <button id="btnTryAgain" onclick="resetFeedback()" class="hidden px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 transition">
+              Try Another Technique ↻
+            </button>
+            <button id="btnNextScenario" onclick="nextScenario()" class="hidden px-5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+              Continue to Next Scenario ➜
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Completion Card -->
+    <div id="completionCard" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-6 text-center shadow-sm">
+      <div class="text-4xl mb-2">🎉</div>
+      <h2 class="text-xl font-bold text-emerald-900 mb-2">Activity Completed!</h2>
+      <p class="text-sm text-emerald-800 max-w-xl mx-auto leading-relaxed mb-4">
+        You successfully evaluated each scenario: distinguishing cell-specific tools in worms, choosing non-invasive TMS for healthy human subjects, and recognizing that only optogenetics can turn on and off in 250 milliseconds.
+      </p>
+      <button onclick="restartActivity()" class="px-4 py-2 text-xs font-bold bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-800 rounded-lg shadow-sm transition">
+        Restart Activity ↻
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Simulation & Logic Script -->
+  <script>
+    let currentScenario = 1;
+    let s1Discovered = new Set(); // Tracks valid methods found
+    let activeSubTech = null;
+    let currentAnim = { type: 'idle', t: 0 };
+    let editMode = false;
+
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Scenario Definitions with simplified, plain-English wording
+    const scenarioConfigs = {
+      1: {
+        badge: "Scenario 1: Model Organism (Worm)",
+        prompt: "A research mentor wants to know whether dopamine controls swimming movement in a transparent worm. You need to discover <strong>3 different techniques</strong> that can specifically target the worm's dopamine cells, test what happens when you <strong>increase</strong> vs. <strong>decrease</strong> dopamine activity, and compare how fast they work.",
+        validate: (choice) => {
+          if (['optogenetic', 'chemogenetic', 'pharmacological'].includes(choice)) {
+            s1Discovered.add(choice);
+            return {
+              valid: true,
+              type: choice,
+              title: `Great Choice: ${capitalize(choice)} works!`,
+              desc: getS1Explanation(choice),
+              anim: 'worm-run'
+            };
+          } else if (choice === 'physical') {
+            return {
+              valid: false,
+              title: "❌ Physical Cutting Fails",
+              desc: "A surgical blade is way too big and crude for a tiny 1-millimeter microscopic worm. You would accidentally cut the worm in half and destroy all surrounding tissue.",
+              anim: 'worm-cut'
+            };
+          } else if (choice === 'electrical') {
+            return {
+              valid: false,
+              title: "❌ Electrical Microstimulation Fails",
+              desc: "Electrode currents spread through all nearby cells. It cannot tell the difference between dopamine neurons and neighboring motor circuits or passing wires.",
+              anim: 'shock'
+            };
+          } else {
+            return {
+              valid: false,
+              title: "❌ Genetic Permanent Ablation is Incomplete",
+              desc: "Permanently deleting cells kills them forever. You cannot turn dopamine activity back on to compare rapid increases vs. decreases in movement.",
+              anim: 'worm-slow'
+            };
+          }
+        }
+      },
+      2: {
+        badge: "Scenario 2: Human Cognitive Neuroscience",
+        prompt: "Brain imaging studies show that an area near the surface of the human brain (the <strong>Inferior Frontal Gyrus</strong>) lights up when people feel curious. You want to prove that this brain area <em>causes</em> curiosity in living human volunteers. Which technique can safely and temporarily alter brain activity without surgery, and what control group will you use?",
+        validate: (choice) => {
+          if (choice === 'electrical') {
+            return {
+              valid: true,
+              title: "✅ Correct Choice: Transcranial Magnetic Stimulation (TMS)",
+              desc: "TMS holds a magnetic coil outside the person's head to temporarily stimulate or disrupt surface brain areas safely and reversibly, with no surgery required!",
+              anim: 'tms-pulse'
+            };
+          } else if (['optogenetic', 'chemogenetic', 'genetic', 'physical'].includes(choice)) {
+            return {
+              valid: false,
+              title: "🚨 Ethical & Safety Violation!",
+              desc: "Invasive brain surgery, cutting tissue, and injecting viruses into healthy human volunteers are strictly illegal and dangerous. You must use a safe, non-invasive method.",
+              anim: 'error'
+            };
+          } else {
+            return {
+              valid: false,
+              title: "❌ Systemic Drugs Lack Spatial Precision",
+              desc: "Taking a pill or drug affects the entire body and whole brain at once. It cannot target just the Inferior Frontal Gyrus to test if that specific region causes curiosity.",
+              anim: 'error'
+            };
+          }
+        }
+      },
+      3: {
+        badge: "Scenario 3: Rapid Sub-Second Precision",
+        prompt: "You are testing brain waves in a mouse. You need to turn off a specific type of inhibitory cell (PV+ neurons) for <strong>exactly 250 milliseconds (a quarter of a second)</strong> while a picture flashes on a screen, and then have them <strong>instantly recover</strong> normal firing.",
+        validate: (choice) => {
+          if (choice === 'optogenetic') {
+            return {
+              valid: true,
+              title: "✅ Correct: Optogenetics is the ONLY technique that works!",
+              desc: "Light switches on and off at the speed of milliseconds! Using yellow light on an inhibitory opsin (NpHR) silences these exact cells for 250 ms, and the cells fire normally the instant the light is turned off.",
+              anim: 'opto-250ms'
+            };
+          } else if (choice === 'chemogenetic') {
+            return {
+              valid: false,
+              title: "❌ Chemogenetics is Thousands of Times Too Slow!",
+              desc: "DREADD drugs take about 15 minutes to turn on and up to 6 hours to clear away. You cannot switch it off after 250 milliseconds.",
+              anim: 'error'
+            };
+          } else if (choice === 'pharmacological') {
+            return {
+              valid: false,
+              title: "❌ Pharmacology is Too Slow",
+              desc: "Injecting chemical drugs takes minutes to wash across cells and hours to clear. It cannot turn off in a fraction of a second.",
+              anim: 'error'
+            };
+          } else if (choice === 'electrical') {
+            return {
+              valid: false,
+              title: "❌ Lacks Cell-Type Specificity",
+              desc: "Electrical stimulation is fast, but it activates every cell and passing nerve fiber nearby. It cannot isolate just PV+ inhibitory interneurons.",
+              anim: 'error'
+            };
+          } else {
+            return {
+              valid: false,
+              title: "❌ Permanent Tissue Destruction",
+              desc: "Physical knife cuts and genetic cell destruction permanently kill the cells. The experiment requires the cells to instantly recover normal activity.",
+              anim: 'error'
+            };
+          }
+        }
+      }
+    };
+
+    function getS1Explanation(choice) {
+      if (choice === 'optogenetic') {
+        return "Optogenetics lets you shine blue light to instantly speed up swimming (using Channelrhodopsin) or yellow light to freeze movement (using Halorhodopsin) in milliseconds!";
+      } else if (choice === 'chemogenetic') {
+        return "Chemogenetics lets you add a designer drug that excites (hM3Dq) or inhibits (hM4Di) the dopamine cells for several hours without needing attached wires!";
+      } else {
+        return "Pharmacology lets you add a dopamine agonist drug (like apomorphine) to increase swimming or a dopamine blocker (like haloperidol) to slow swimming down over minutes to hours!";
+      }
+    }
+
+    function capitalize(s) {
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    // UI Updates
+    function updateScenarioView() {
+      const config = scenarioConfigs[currentScenario];
+      document.getElementById("scenarioBadge").innerText = config.badge;
+      document.getElementById("scenarioPrompt").innerHTML = config.prompt;
+
+      // Update Tabs
+      for (let i = 1; i <= 3; i++) {
+        const tab = document.getElementById(`tab-${i}`);
+        if (i === currentScenario) {
+          tab.className = "border-2 border-sky-500 bg-sky-50 text-sky-900 p-3 rounded-xl flex items-center justify-center gap-2 font-bold text-xs sm:text-sm shadow-sm transition";
+        } else if (i < currentScenario) {
+          tab.className = "border-2 border-emerald-500 bg-emerald-50 text-emerald-800 p-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm transition";
+        } else {
+          tab.className = "border-2 border-slate-200 bg-white text-slate-400 p-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm transition";
+        }
+      }
+
+      // Progress Tracker for S1
+      const progressEl = document.getElementById("scenarioProgress");
+      if (currentScenario === 1) {
+        progressEl.innerText = `Valid Methods Discovered: ${s1Discovered.size} of 3`;
+      } else {
+        progressEl.innerText = "";
+      }
+
+      resetFeedback();
+    }
+
+    // Handle Mechanism Clicks
+    function handleSelection(choice) {
+      const config = scenarioConfigs[currentScenario];
+      const outcome = config.validate(choice);
+
+      const box = document.getElementById("feedbackBox");
+      const title = document.getElementById("feedbackTitle");
+      const desc = document.getElementById("feedbackDesc");
+      const icon = document.getElementById("feedbackIcon");
+      const tryBtn = document.getElementById("btnTryAgain");
+      const nextBtn = document.getElementById("btnNextScenario");
+      const subPanel = document.getElementById("subActionPanel");
+      const s2Panel = document.getElementById("s2ControlPanel");
+      const overlay = document.getElementById("canvasOverlay");
+
+      box.classList.remove("hidden");
+      title.innerText = outcome.title;
+      desc.innerText = outcome.desc;
+
+      currentAnim.type = outcome.anim;
+      currentAnim.t = 0;
+
+      if (outcome.valid) {
+        box.className = "bg-emerald-50/80 border-2 border-emerald-500 rounded-2xl p-6 mb-6 shadow-sm";
+        title.className = "text-lg font-bold text-emerald-950 mb-1";
+        desc.className = "text-sm text-emerald-900 leading-relaxed mb-4";
+        icon.innerText = "✅";
+        tryBtn.classList.add("hidden");
+        overlay.innerText = `Active Simulation: ${capitalize(choice)}`;
+
+        // Scenario 1 Behavior
+        if (currentScenario === 1) {
+          activeSubTech = choice;
+          subPanel.classList.remove("hidden");
+          document.getElementById("scenarioProgress").innerText = `Valid Methods Discovered: ${s1Discovered.size} of 3`;
+          
+          if (s1Discovered.size === 3) {
+            nextBtn.classList.remove("hidden");
+            nextBtn.innerText = "All 3 Discovered! Proceed to Scenario 2 ➜";
+          } else {
+            nextBtn.classList.add("hidden");
+            desc.innerHTML += `<br><span class="font-bold text-emerald-800">→ You found ${s1Discovered.size} of 3 valid methods. Try testing another button to find the others!</span>`;
+          }
+        } 
+        // Scenario 2 Behavior (Require written control proposal)
+        else if (currentScenario === 2) {
+          s2Panel.classList.remove("hidden");
+          nextBtn.classList.add("hidden"); // Handled after text box submission
+        } 
+        // Scenario 3 Behavior
+        else if (currentScenario === 3) {
+          nextBtn.classList.remove("hidden");
+          nextBtn.innerText = "Complete Lab & Review ➜";
+        }
+
+      } else {
+        box.className = "bg-rose-50/80 border-2 border-rose-400 rounded-2xl p-6 mb-6 shadow-sm";
+        title.className = "text-lg font-bold text-rose-950 mb-1";
+        desc.className = "text-sm text-rose-900 leading-relaxed mb-4";
+        icon.innerText = "❌";
+        tryBtn.classList.remove("hidden");
+        nextBtn.classList.add("hidden");
+        subPanel.classList.add("hidden");
+        s2Panel.classList.add("hidden");
+        overlay.innerText = "Constraint Violated - Try Another Technique";
+      }
+    }
+
+    // Sub-mode for Scenario 1 (Excite vs Inhibit)
+    function runSubMode(mode) {
+      const details = document.getElementById("subModeDetails");
+      if (activeSubTech === 'optogenetic') {
+        if (mode === 'excite') {
+          currentAnim.type = 'worm-fast';
+          details.innerText = "Blue light (470nm) activates Channelrhodopsin (ChR2) → Instant burst of action potentials → Worm swims fast!";
+        } else {
+          currentAnim.type = 'worm-freeze';
+          details.innerText = "Yellow light (589nm) activates Halorhodopsin (NpHR) → Hyperpolarization → Worm instantly freezes!";
+        }
+      } else if (activeSubTech === 'chemogenetic') {
+        if (mode === 'excite') {
+          currentAnim.type = 'worm-fast';
+          details.innerText = "CNO binds hM3Dq receptor → Intracellular Gq signaling → Sustained depolarization and swimming for hours.";
+        } else {
+          currentAnim.type = 'worm-slow';
+          details.innerText = "CNO binds hM4Di receptor → Gi signaling inhibits firing → Reduced swimming for several hours.";
+        }
+      } else if (activeSubTech === 'pharmacological') {
+        if (mode === 'excite') {
+          currentAnim.type = 'worm-fast';
+          details.innerText = "Dopamine receptor agonist (e.g. Apomorphine) stimulates post-synaptic receptors → Motor excitation over minutes/hours.";
+        } else {
+          currentAnim.type = 'worm-slow';
+          details.innerText = "Dopamine antagonist (e.g. Haloperidol) blocks dopamine receptors → Slower crawling rate.";
+        }
+      }
+    }
+
+    function toggleControlGuide() {
+      const g = document.getElementById("controlGuide");
+      g.classList.toggle("hidden");
+    }
+
+    function submitControlProposal() {
+      const val = document.getElementById("controlInput").value.trim();
+      if (val.length < 5) {
+        alert("Please write a quick sentence or two describing your control group before advancing!");
+        return;
+      }
+      alert("Proposal saved! Great experiment design.");
+      nextScenario();
+    }
+
+    function nextScenario() {
+      if (currentScenario < 3) {
+        currentScenario++;
+        updateScenarioView();
+      } else {
+        document.getElementById("feedbackBox").classList.add("hidden");
+        document.getElementById("completionCard").classList.remove("hidden");
+      }
+    }
+
+    function resetFeedback() {
+      document.getElementById("feedbackBox").classList.add("hidden");
+      document.getElementById("subActionPanel").classList.add("hidden");
+      document.getElementById("s2ControlPanel").classList.add("hidden");
+      document.getElementById("canvasOverlay").innerText = "State: Ready. Choose a technique below.";
+      currentAnim.type = 'idle';
+    }
+
+    function restartActivity() {
+      currentScenario = 1;
+      s1Discovered.clear();
+      document.getElementById("completionCard").classList.add("hidden");
+      updateScenarioView();
+    }
+
+    // Live Text Editing Mechanism
+    function toggleEditMode() {
+      editMode = !editMode;
+      document.body.classList.toggle("editable-active", editMode);
+      const label = document.getElementById("editTextLabel");
+      const resetBtn = document.getElementById("resetEditsBtn");
+
+      if (editMode) {
+        label.innerText = "💾 Save Custom Text";
+        resetBtn.classList.remove("hidden");
+        document.querySelectorAll("[data-key]").forEach(el => {
+          el.setAttribute("contenteditable", "true");
+        });
+      } else {
+        label.innerText = "✏️ Enable Live Text Editing";
+        document.querySelectorAll("[data-key]").forEach(el => {
+          el.setAttribute("contenteditable", "false");
+          const key = el.getAttribute("data-key");
+          localStorage.setItem("neuromod_text_" + key, el.innerHTML);
+        });
+        alert("Your custom text has been saved to your browser!");
+      }
+    }
+
+    function loadCustomText() {
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.getAttribute("data-key");
+        const saved = localStorage.getItem("neuromod_text_" + key);
+        if (saved) el.innerHTML = saved;
+      });
+    }
+
+    function resetCustomText() {
+      if (confirm("Reset all text back to the default original?")) {
+        document.querySelectorAll("[data-key]").forEach(el => {
+          const key = el.getAttribute("data-key");
+          localStorage.removeItem("neuromod_text_" + key);
+        });
+        location.reload();
+      }
+    }
+
+    // Canvas Animation Loop
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      currentAnim.t += 0.05;
+
+      // Dark background for high contrast oscilloscope/organism
+      ctx.fillStyle = "#090d16";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Faint Grid
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+      for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+      // Scenarios Animations
+      if (currentAnim.type === 'worm-run' || currentAnim.type === 'worm-fast') {
+        // Fast swimming nematode
+        drawWorm(4, "#38bdf8", "Fast Swimming (Dopamine Activated)");
+      } else if (currentAnim.type === 'worm-freeze') {
+        // Frozen worm
+        drawWorm(0, "#f59e0b", "Worm Frozen / Inactive (Dopamine Inhibited)");
+      } else if (currentAnim.type === 'worm-slow') {
+        drawWorm(0.8, "#94a3b8", "Slow Crawling (Dopamine Blocked)");
+      } else if (currentAnim.type === 'worm-cut') {
+        // Sliced worm
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "14px monospace";
+        ctx.fillText("🔪 Worm severed in two pieces! Circuit damaged.", 30, 40);
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 12;
+        ctx.beginPath(); ctx.moveTo(150, 150); ctx.lineTo(360, 150); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(440, 170); ctx.lineTo(650, 170); ctx.stroke();
+      } else if (currentAnim.type === 'tms-pulse') {
+        // Human Head & TMS Coil
+        drawTMS();
+      } else if (currentAnim.type === 'opto-250ms') {
+        // 250ms Oscilloscope trace
+        drawOscilloscope();
+      } else if (currentAnim.type === 'shock') {
+        ctx.fillStyle = "#f59e0b";
+        ctx.font = "14px monospace";
+        ctx.fillText("⚡ Microstimulation Spread: Non-specific nearby cells triggered!", 30, 40);
+      } else {
+        // Baseline idle wave
+        ctx.fillStyle = "#64748b";
+        ctx.font = "14px monospace";
+        ctx.fillText("Ready: Baseline Neural Activity", 30, 40);
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = 0; x < canvas.width; x += 5) {
+          let y = 150 + Math.sin(x * 0.03 + currentAnim.t) * 15;
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    function drawWorm(speed, color, label) {
+      ctx.fillStyle = color;
+      ctx.font = "14px monospace";
+      ctx.fillText(label, 30, 40);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 14;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      for (let x = 120; x < 680; x += 10) {
+        let y = 150 + Math.sin(x * 0.02 + currentAnim.t * speed) * 35;
+        if (x === 120) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawTMS() {
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "14px monospace";
+      ctx.fillText("⚡ Active TMS: Magnetic Pulses Modulating Inferior Frontal Gyrus", 30, 40);
+
+      // Head silhouette
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(380, 160, 65, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Coil pulses
+      let pulseR = 25 + (Math.sin(currentAnim.t * 4) + 1) * 20;
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(330, 140, pulseR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillText("IFG Region", 290, 120);
+    }
+
+    function drawOscilloscope() {
+      ctx.fillStyle = "#eab308";
+      ctx.font = "14px monospace";
+      ctx.fillText("🟡 250ms Yellow Light: NpHR hyperpolarizes cell -> Instant Silence -> Rapid Recovery", 30, 40);
+
+      // Yellow Pulse Box
+      ctx.fillStyle = "rgba(234, 179, 8, 0.15)";
+      ctx.fillRect(280, 50, 240, 200);
+      ctx.strokeStyle = "#eab308";
+      ctx.strokeRect(280, 50, 240, 200);
+      ctx.fillStyle = "#eab308";
+      ctx.fillText("250 ms Light Pulse", 335, 75);
+
+      // Voltage trace
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 40; x < 760; x += 3) {
+        let y = 160;
+        if (x < 280 || x > 520) {
+          // Normal firing spikes
+          if ((x % 35) < 6) y = 90;
+        } else {
+          // Hyperpolarized flatline during 250ms light
+          y = 210;
+        }
+        if (x === 40) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Init
+    window.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      loadCustomText();
+      updateScenarioView();
+      render();
+    });
+  </script>
+</body>
+</html>
