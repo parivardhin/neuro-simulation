@@ -245,21 +245,21 @@
           } else if (choice === 'physical') {
             return {
               valid: false,
-              title: "❌ Physical Cutting Fails",
+              title: "Physical Cutting Fails",
               desc: "A surgical blade is way too big and crude for a tiny 1-millimeter microscopic worm. You would accidentally cut the worm in half and destroy all surrounding tissue.",
               anim: 'worm-cut'
             };
           } else if (choice === 'electrical') {
             return {
               valid: false,
-              title: "❌ Electrical Microstimulation Fails",
+              title: "Electrical Microstimulation Fails",
               desc: "Electrode currents spread through all nearby cells. It cannot tell the difference between dopamine neurons and neighboring motor circuits or passing wires.",
               anim: 'shock'
             };
           } else {
             return {
               valid: false,
-              title: "❌ Genetic Permanent Ablation is Incomplete",
+              title: "Genetic Permanent Ablation is Incomplete",
               desc: "Permanently deleting cells kills them forever. You cannot turn dopamine activity back on to compare rapid increases vs. decreases in movement.",
               anim: 'worm-slow'
             };
