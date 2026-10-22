@@ -266,29 +266,50 @@
           }
         }
       },
-      2: {
+2: {
         badge: "Scenario 2: Human Cognitive Neuroscience",
         prompt: "Brain imaging studies show that an area near the surface of the human brain (the <strong>Inferior Frontal Gyrus</strong>) lights up when people feel curious. You want to prove that this brain area <em>causes</em> curiosity in living human volunteers. Which technique can safely and temporarily alter brain activity without surgery, and what control group will you use?",
         validate: (choice) => {
           if (choice === 'electrical') {
             return {
               valid: true,
-              title: "✅ Correct Choice: Transcranial Magnetic Stimulation (TMS)",
-              desc: "TMS holds a magnetic coil outside the person's head to temporarily stimulate or disrupt surface brain areas safely and reversibly, with no surgery required!",
+              title: "Correct Choice: Transcranial Magnetic Stimulation (TMS)",
+              desc: "TMS holds an electromagnetic coil safely against the scalp outside the head. It temporarily and reversibly modulates electrical activity in surface cortical areas like the IFG without any surgery or genetic alterations!",
               anim: 'tms-pulse'
             };
-          } else if (['optogenetic', 'chemogenetic', 'genetic', 'physical'].includes(choice)) {
+          } else if (choice === 'physical') {
             return {
               valid: false,
-              title: "🚨 Ethical & Safety Violation!",
-              desc: "Invasive brain surgery, cutting tissue, and injecting viruses into healthy human volunteers are strictly illegal and dangerous. You must use a safe, non-invasive method.",
+              title: "Unethical & Permanent Brain Damage",
+              desc: "Surgically cutting or ablating brain tissue causes permanent, irreversible brain damage. It is completely unethical and illegal to physically lesion healthy human volunteers to study curiosity!",
               anim: 'error'
             };
-          } else {
+          } else if (choice === 'genetic') {
             return {
               valid: false,
-              title: "❌ Systemic Drugs Lack Spatial Precision",
-              desc: "Taking a pill or drug affects the entire body and whole brain at once. It cannot target just the Inferior Frontal Gyrus to test if that specific region causes curiosity.",
+              title: "Permanent & Unethical in Humans",
+              desc: "Genetic modifications (like gene knockouts or Cre-mediated cell ablation) permanently alter human DNA and kill brain cells. This cannot be ethically done in healthy humans, and it cannot provide temporary, on-and-off testing.",
+              anim: 'error'
+            };
+          } else if (choice === 'chemogenetic') {
+            return {
+              valid: false,
+              title: "Requires Invasive Viral Injections",
+              desc: "DREADDs require drilling through the skull to inject viral vectors into brain tissue to express designer receptors. This invasive neurosurgery is not ethically justifiable in healthy volunteers. Additionally, DREADD ligands act for hours and cannot provide task-locked control.",
+              anim: 'error'
+            };
+          } else if (choice === 'optogenetic') {
+            return {
+              valid: false,
+              title: "Requires Brain Surgery & Fiber Implants",
+              desc: "Optogenetics requires drilling into the skull, injecting viral vectors to deliver opsin genes, and implanting invasive fiber-optic glass cables into brain tissue to shine light. This is strictly unethical in healthy human subjects!",
+              anim: 'error'
+            };
+          } else if (choice === 'pharmacological') {
+            return {
+              valid: false,
+              title: "Lacks Spatial Precision",
+              desc: "Swallowing a pill or receiving an injection delivers drugs through the bloodstream to the entire brain and body. It cannot selectively target just the Inferior Frontal Gyrus to prove whether that specific area causes curiosity.",
               anim: 'error'
             };
           }
@@ -301,35 +322,35 @@
           if (choice === 'optogenetic') {
             return {
               valid: true,
-              title: "✅ Correct: Optogenetics is the ONLY technique that works!",
+              title: "Correct Choice: Optogenetics is the ONLY technique that works!",
               desc: "Light switches on and off at the speed of milliseconds! Using yellow light on an inhibitory opsin (NpHR) silences these exact cells for 250 ms, and the cells fire normally the instant the light is turned off.",
               anim: 'opto-250ms'
             };
           } else if (choice === 'chemogenetic') {
             return {
               valid: false,
-              title: "❌ Chemogenetics is Thousands of Times Too Slow!",
+              title: "Chemogenetics is Thousands of Times Too Slow!",
               desc: "DREADD drugs take about 15 minutes to turn on and up to 6 hours to clear away. You cannot switch it off after 250 milliseconds.",
               anim: 'error'
             };
           } else if (choice === 'pharmacological') {
             return {
               valid: false,
-              title: "❌ Pharmacology is Too Slow",
+              title: "Pharmacology is Too Slow",
               desc: "Injecting chemical drugs takes minutes to wash across cells and hours to clear. It cannot turn off in a fraction of a second.",
               anim: 'error'
             };
           } else if (choice === 'electrical') {
             return {
               valid: false,
-              title: "❌ Lacks Cell-Type Specificity",
+              title: "Lacks Cell-Type Specificity",
               desc: "Electrical stimulation is fast, but it activates every cell and passing nerve fiber nearby. It cannot isolate just PV+ inhibitory interneurons.",
               anim: 'error'
             };
           } else {
             return {
               valid: false,
-              title: "❌ Permanent Tissue Destruction",
+              title: "Permanent Tissue Destruction",
               desc: "Physical knife cuts and genetic cell destruction permanently kill the cells. The experiment requires the cells to instantly recover normal activity.",
               anim: 'error'
             };
